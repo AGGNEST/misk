@@ -761,8 +761,16 @@ async function downloadSiglip(session) {
           );
 
           if (expectedBytes && data.byteLength !== expectedBytes) {
-            throw new Error("Incomplete SigLIP asset");
-          }
+              console.error("SigLIP file size mismatch:", {
+                url,
+                expectedBytes,
+                actualBytes: data.byteLength
+              });
+
+              throw new Error(
+                `Incomplete SigLIP asset: ${url} | Expected: ${expectedBytes} | Actual: ${data.byteLength}`
+              );
+            }
 
           if (cacheResult && expectedBytes) {
             await cache?.put(url, new Response(data)).catch(() => {});
@@ -895,7 +903,7 @@ async function downloadSiglip(session) {
       part(modelUrl, 1604365),
       part(embeddingsUrl, 3072000),
       part(labelsUrl, 14139),
-      part(metadataUrl, 192),
+      part(metadataUrl, 185),
       part(manifestUrl, 0, false),
       assemble(runtimeAssets.runtime, runtimeFolder),
       part(runtimeScriptUrl, runtimeScriptBytes, false),
