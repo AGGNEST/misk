@@ -1,0 +1,8 @@
+__pycache__/
+_test/
+*.pyc
+.DS_Store
+Thumbs.db
+.vscode/
+vendor/siglip/onnx/image_encoder.onnx.data
+vendor/siglip/onnx/external_parts/

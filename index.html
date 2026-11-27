@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102525">
+  <title>ماهذا؟</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e2f78a'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='sans-serif' font-size='25' font-weight='bold' fill='%23152c27'%3EAa%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=15">
+  <script defer src="speech-input.js?v=15"></script>
+  <script defer src="app.js?v=15"></script>
+</head>
+<body>
+  <main id="experience" class="experience">
+
+<section id="age-screen" class="age-screen" aria-labelledby="age-title" hidden>
+  <div class="age-card">
+    <h2 id="age-title">كم عمر الطفل؟</h2>
+    <p>اختر العمر حتى نعرض الكلمات المناسبة له.</p>
+
+    <label for="age-select">عمر الطفل</label>
+    <select id="age-select">
+      <option value="">اختر العمر</option>
+      <option value="4-6">من 4 إلى 6 سنوات</option>
+      <option value="7-9">من 7 إلى 9 سنوات</option>
+      <option value="10-11">من 10 إلى 11 سنة</option>
+    </select>
+
+    <button id="age-start" type="button">ابدأ التعلم</button>
+    <p id="age-error" role="alert" hidden>فضلاً اختر العمر أولاً.</p>
+  </div>
+</section>
+
+    <video id="camera" class="camera" autoplay muted playsinline aria-hidden="true"></video>
+    <div class="shade" aria-hidden="true"></div>
+
+    <header class="top">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">Aa</span>
+        <h1>تعلّم بالكاميرا</h1>
+      </div>
+      <div class="top-actions">
+        <button id="history-button" class="stop" type="button">السجل</button>
+        <button id="voice-settings" class="stop" type="button" aria-haspopup="dialog" hidden>الصوت</button>
+        <button id="stop" class="stop" type="button" hidden>إيقاف الكاميرا</button>
+        <div id="model-panel" class="model-panel" hidden>
+        <select id="model-select">
+          <option value="mobileclip">MobileCLIP-S0</option>
+          <option value="clip">CLIP ViT-B/32</option>
+          <option value="siglip">SigLIP Base</option>
+        </select>
+      </div>
+      </div>
+    </header>
+    <div id="viewfinder" class="viewfinder" aria-hidden="true">
+      <i></i><i></i><i></i><i></i>
+      <div class="lens"><span></span></div>
+    </div>
+    <div class="controls">
+      <section id="result" class="result" aria-label="الكلمة بالإنجليزية" hidden>
+        <div class="word-group" lang="en-US" dir="ltr">
+          <strong id="word"></strong>
+          <span id="sentence"></span>
+        </div>
+        <button id="replay" class="replay" type="button" aria-label="اسمع الكلمة" title="اسمع الكلمة">
+          <span class="speaker" aria-hidden="true"></span>
+        </button>
+      </section>
+      <p id="status" class="status" role="status" aria-live="polite">شغّل الكاميرا ووجّهها نحو غرض واحد.</p>
+      <div id="input-modes" class="input-modes" role="group" aria-label="طريقة السؤال" hidden>
+        <button id="manual-mode" type="button" aria-pressed="true">بالزر</button>
+        <button id="mic-mode" type="button" aria-pressed="false">بالمايك</button>
+      </div>
+<button id="action" class="action" type="button">شغّل الكاميرا</button>
+      <div id="mic-panel" class="mic-panel" hidden>
+        <div id="mic-wave" class="mic-wave" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <span id="mic-state" role="status">جاري تشغيل المايك…</span>
+      </div>
+      <noscript>فعّل JavaScript لاستخدام الكاميرا.</noscript>
+    </div>
+    <dialog id="voice-dialog" class="voice-dialog" aria-labelledby="voice-title">
+      <form method="dialog">
+        <h2 id="voice-title">صوت النطق</h2>
+        <label for="voice-select">الصوت الإنجليزي</label>
+        <select id="voice-select"></select>
+        <p id="voice-note" class="voice-note" role="status" hidden></p>
+        <div class="voice-actions">
+          <button id="voice-preview" type="button">اسمع عيّنة</button>
+          <button id="voice-done" value="save">تم</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="history-dialog" class="voice-dialog history-dialog" aria-labelledby="history-title">
+  <div class="history-header">
+  <h2 id="history-title">السجل</h2>
+  <div class="history-actions">
+    <button id="history-clear" type="button">مسح السجل</button>
+    <button id="history-close" type="button">إغلاق</button>
+  </div>
+</div>
+  <div id="history-list" class="history-list"></div>
+  <p id="history-empty" hidden>
+    لا توجد عمليات تعرّف محفوظة حتى الآن.
+  </p>
+</dialog>
+  </main>
+</body>
+</html>
