@@ -3,20 +3,63 @@
 
 let detector = null;
 
+async function getSiglipWeightsCache(manifest) {
+  try {
+    const cacheName = `misk-siglip-weights-${manifest.sha256}`;
+    return await caches.open(cacheName);
+  } catch (error) {
+    console.warn("SigLIP cache unavailable:", error);
+    return null;
+  }
+}
+
+
 function toBytes(data) {
   if (data instanceof Uint8Array) return data;
   if (data instanceof ArrayBuffer) return new Uint8Array(data);
   throw new Error("Invalid binary data");
 }
 
-async function fetchBytes(url, expectedLength) {
+async function fetchBytes(url, expectedLength, cache) {
+
+  // Try loading from cache first
+  if (cache) {
+    try {
+      const cached = await cache.match(url);
+
+      if (cached) {
+        const bytes = new Uint8Array(
+          await cached.arrayBuffer()
+        );
+
+        if (
+          expectedLength === undefined ||
+          bytes.byteLength === expectedLength
+        ) {
+          console.log("SigLIP cache hit:", url);
+          return bytes;
+        }
+
+        console.warn("Invalid cached SigLIP part:", url);
+        await cache.delete(url);
+      }
+    } catch (error) {
+      console.warn("SigLIP cache read failed:", error);
+    }
+  }
+
+  // Download if not cached
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Failed to download ${url}: HTTP ${response.status}`);
+    throw new Error(
+      `Failed to download ${url}: HTTP ${response.status}`
+    );
   }
 
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  const bytes = new Uint8Array(
+    await response.arrayBuffer()
+  );
 
   if (
     expectedLength !== undefined &&
@@ -25,6 +68,25 @@ async function fetchBytes(url, expectedLength) {
     throw new Error(
       `Invalid size for ${url}: expected ${expectedLength}, got ${bytes.byteLength}`
     );
+  }
+
+  // Save downloaded part
+  if (cache) {
+    try {
+      await cache.put(
+        url,
+        new Response(bytes, {
+          headers: {
+            "Content-Type": "application/octet-stream"
+          }
+        })
+      );
+
+      console.log("SigLIP cached:", url);
+
+    } catch (error) {
+      console.warn("SigLIP cache write failed:", error);
+    }
   }
 
   return bytes;
@@ -40,34 +102,38 @@ async function loadExternalWeights(baseUrl, manifest) {
   }
 
   const totalBytes = manifest.total_bytes;
+  const cache = await getSiglipWeightsCache(manifest);
+
+  const parts = await Promise.all(
+    manifest.parts.map(async (part, index) => {
+      const bytes = await fetchBytes(
+      new URL(part.name, baseUrl).href,
+      part.bytes,
+      cache
+    );
+
+      self.postMessage({
+        progress: {
+          stage: "weights",
+          loaded: index + 1,
+          total: manifest.parts.length
+        }
+      });
+
+      return bytes;
+    })
+  );
 
   const weights = new Uint8Array(totalBytes);
   let offset = 0;
 
-  for (let i = 0; i < manifest.parts.length; i++) {
-    const part = manifest.parts[i];
-
-    const bytes = await fetchBytes(
-      new URL(part.name, baseUrl).href,
-      part.bytes
-    );
-
+  for (const bytes of parts) {
     if (offset + bytes.length > totalBytes) {
       throw new Error("External weights exceed expected size");
     }
 
     weights.set(bytes, offset);
     offset += bytes.length;
-
-    self.postMessage({
-      progress: {
-        stage: "weights",
-        loaded: i + 1,
-        total: manifest.parts.length,
-        bytesLoaded: offset,
-        bytesTotal: totalBytes
-      }
-    });
   }
 
   if (offset !== totalBytes) {
@@ -76,7 +142,6 @@ async function loadExternalWeights(baseUrl, manifest) {
     );
   }
 
-  // Verify the complete file against the original SHA-256.
   const digest = await crypto.subtle.digest("SHA-256", weights);
 
   const hash = Array.from(new Uint8Array(digest))
@@ -205,10 +270,16 @@ async function prepareSiglip(data) {
     }
   });
 
-  const weights = await loadExternalWeights(
-    weightsBaseUrl,
-    manifestData
-  );
+const weightsStart = performance.now();
+const weights = await loadExternalWeights(
+  weightsBaseUrl,
+  manifestData
+);
+console.log(
+  "SigLIP weights download + verification:",
+  ((performance.now() - weightsStart) / 1000).toFixed(2),
+  "seconds"
+);
 
   await loadRuntime(
     runtimeScript,
